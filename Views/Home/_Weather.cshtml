@@ -1,0 +1,99 @@
+﻿<h2 class="mb-3">🌤 Weather</h2>
+
+<div class="mb-3">
+    <label for="citySelect" class="form-label fw-semibold">Select City:</label>
+    <select id="citySelect" class="form-select w-auto d-inline-block">
+        <option value="Lahore" selected>Lahore</option>
+        <option value="Karachi">Karachi</option>
+        <option value="Islamabad">Islamabad</option>
+        <option value="Rawalpindi">Rawalpindi</option>
+        <option value="Faisalabad">Faisalabad</option>
+        <option value="Multan">Multan</option>
+        <option value="Peshawar">Peshawar</option>
+        <option value="Quetta">Quetta</option>
+        <option value="Sialkot">Sialkot</option>
+        <option value="Gujranwala">Gujranwala</option>
+        <option value="Hyderabad">Hyderabad</option>
+    </select>
+</div>
+
+<div id="weatherLoader" class="text-center my-3">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2">Fetching latest weather...</p>
+</div>
+
+<div id="weatherCard" class="card shadow-lg rounded-4 d-none mx-auto" style="max-width: 600px;">
+    <div class="card-body p-4">
+        <div class="text-center mb-3">
+            <img id="weatherIcon" src="" alt="Weather Icon" style="width: 100px; height: 100px;" />
+        </div>
+        <div class="text-center mb-3">
+            <h4 id="cityName" class="mb-0 fw-bold"></h4>
+            <small id="condition" class="text-muted"></small>
+        </div>
+        <div class="text-center mb-3">
+            <h2 id="temp" class="fw-bold text-primary"></h2>
+            <p class="mb-0 text-muted">Feels like <span id="feelsLike"></span></p>
+        </div>
+        <div class="row g-3 text-center">
+            <div class="col-6 col-md-4">🌡️ Min: <span id="tempMin"></span></div>
+            <div class="col-6 col-md-4">🌡️ Max: <span id="tempMax"></span></div>
+            <div class="col-6 col-md-4">💧 Humidity: <span id="humidity"></span></div>
+            <div class="col-6 col-md-4">🌬️ Wind: <span id="wind"></span></div>
+            <div class="col-6 col-md-4">☁️ Clouds: <span id="clouds"></span></div>
+            <div class="col-6 col-md-4">👀 Visibility: <span id="visibility"></span></div>
+            <div class="col-6 col-md-4">🔽 Pressure: <span id="pressure"></span></div>
+            <div class="col-6 col-md-4">🌅 Sunrise: <span id="sunrise"></span></div>
+            <div class="col-6 col-md-4">🌇 Sunset: <span id="sunset"></span></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentCity = "Lahore";
+
+    async function fetchWeather(city = "Lahore") {
+        try {
+            currentCity = city;
+            document.getElementById("weatherLoader").classList.remove("d-none");
+            document.getElementById("weatherCard").classList.add("d-none");
+
+            const response = await fetch(`/Home/GetWeather?city=${city}`);
+            const data = await response.json();
+
+            document.getElementById("weatherLoader").classList.add("d-none");
+            document.getElementById("weatherCard").classList.remove("d-none");
+
+            document.getElementById("cityName").innerText = `${data.city}, ${data.country}`;
+            document.getElementById("condition").innerText = data.condition;
+            document.getElementById("weatherIcon").src = data.icon;
+
+            document.getElementById("temp").innerText = data.temp;
+            document.getElementById("feelsLike").innerText = data.feelsLike;
+            document.getElementById("tempMin").innerText = data.tempMin;
+            document.getElementById("tempMax").innerText = data.tempMax;
+            document.getElementById("humidity").innerText = data.humidity;
+            document.getElementById("wind").innerText = data.wind;
+            document.getElementById("clouds").innerText = data.clouds;
+            document.getElementById("visibility").innerText = data.visibility;
+            document.getElementById("pressure").innerText = data.pressure;
+            document.getElementById("sunrise").innerText = data.sunrise;
+            document.getElementById("sunset").innerText = data.sunset;
+
+        } catch (err) {
+            console.error("Error fetching weather:", err);
+            document.getElementById("weatherLoader").innerHTML =
+                `<p class="text-danger">Failed to load weather data.</p>`;
+        }
+    }
+
+    document.getElementById("citySelect").addEventListener("change", function () {
+        fetchWeather(this.value);
+    });
+
+    setInterval(() => fetchWeather(currentCity), 300000);
+
+    fetchWeather("Lahore");
+</script>

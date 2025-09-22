@@ -1,0 +1,178 @@
+﻿@model List<AppUser>
+
+@{
+    ViewData["Title"] = "Manage Users";
+}
+
+<div class="container mt-5">
+    <h2 class="mb-4">Manage Users</h2>
+
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th style="width:60px;">Picture</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th style="width:200px;">Roles</th>
+                <th style="width:150px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model)
+            {
+                <tr>
+                    <td>
+                        <img src="@user.PictureUrl" class="rounded-circle border" style="width:40px;height:40px;" />
+                    </td>
+                    <td>@user.Name</td>
+                    <td>@user.Email</td>
+                    <td class="user-roles" data-userid="@user.Id">
+                        @string.Join(", ", user.UserRoles.Select(ur => ur.Role.Name))
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#roleModal"
+                                data-userid="@user.Id"
+                                data-username="@user.Name"
+                                data-roles="@string.Join(",", user.UserRoles.Select(ur => ur.Role.Name))">
+                            Manage Roles
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- Role Management Modal -->
+<div class="modal fade" id="roleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Manage Roles for <span id="modalUserName"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modalAlert"></div>
+
+                <input type="hidden" id="modalUserId" />
+
+                <!-- Assign Role -->
+                <div class="mb-3">
+                    <label class="form-label">Assign Role</label>
+                    <div class="input-group">
+                        <select id="assignRoleSelect" class="form-select">
+                            <option value="User">User</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                        <button id="assignRoleBtn" class="btn btn-primary">Assign</button>
+                    </div>
+                </div>
+
+                <!-- Existing Roles -->
+                <div>
+                    <h6>Current Roles</h6>
+                    <ul id="roleList" class="list-group"></ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentUserId = null;
+
+        var roleModal = document.getElementById('roleModal');
+        roleModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            currentUserId = button.getAttribute('data-userid');
+            var userName = button.getAttribute('data-username');
+            var roles = button.getAttribute('data-roles').split(',').filter(r => r);
+
+            document.getElementById('modalUserName').innerText = userName;
+            document.getElementById('modalUserId').value = currentUserId;
+
+            renderRoles(roles);
+            clearAlert();
+        });
+
+        function renderRoles(roles) {
+            var roleList = document.getElementById('roleList');
+            roleList.innerHTML = '';
+            if (roles.length === 0) {
+                roleList.innerHTML = '<li class="list-group-item text-muted">No roles assigned</li>';
+            } else {
+                roles.forEach(function (role) {
+                    var li = document.createElement('li');
+                    li.className = "list-group-item d-flex justify-content-between align-items-center";
+                    li.innerHTML = `
+                        ${role}
+                        <button class="btn btn-sm btn-danger remove-role" data-role="${role}">Remove</button>
+                    `;
+                    roleList.appendChild(li);
+                });
+            }
+        }
+
+        function showAlert(type, message) {
+            document.getElementById("modalAlert").innerHTML =
+                `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>`;
+        }
+
+        function clearAlert() {
+            document.getElementById("modalAlert").innerHTML = '';
+        }
+
+        // Assign role
+        document.getElementById('assignRoleBtn').addEventListener('click', function () {
+            var roleName = document.getElementById('assignRoleSelect').value;
+
+            fetch('@Url.Action("AssignRole", "Admin")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `userId=${currentUserId}&roleName=${roleName}`
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    renderRoles(data.roles);
+                    document.querySelector(`.user-roles[data-userid='${currentUserId}']`).innerText = data.roles.join(", ");
+                    showAlert("success", "Role assigned successfully.");
+                } else {
+                    showAlert("danger", data.message || "Failed to assign role.");
+                }
+            });
+        });
+
+        // Remove role
+        document.getElementById('roleList').addEventListener('click', function (e) {
+            if (e.target.classList.contains('remove-role')) {
+                var roleName = e.target.getAttribute('data-role');
+
+                fetch('@Url.Action("RemoveRole", "Admin")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `userId=${currentUserId}&roleName=${roleName}`
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        renderRoles(data.roles);
+                        document.querySelector(`.user-roles[data-userid='${currentUserId}']`).innerText = data.roles.join(", ");
+                        showAlert("success", "Role removed successfully.");
+                    } else {
+                        showAlert("danger", data.message || "Failed to remove role.");
+                    }
+                });
+            }
+        });
+    </script>
+}

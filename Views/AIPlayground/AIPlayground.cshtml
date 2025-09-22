@@ -1,0 +1,35 @@
+﻿@{
+    ViewData["Title"] = "AI Playground";
+}
+
+<h2 class="mb-4">🎨 AI Playground</h2>
+
+<form asp-action="Playground" method="post">
+    <div class="mb-3">
+        <label for="userInput" class="form-label">Enter a topic / idea / theme</label>
+        <input type="text" id="userInput" name="userInput" class="form-control"
+               value="@ViewBag.UserInput" placeholder="e.g. cats, space travel, friendship" required />
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" name="actionType" value="joke" class="btn btn-warning">
+            😂 Tell a Joke
+        </button>
+        <button type="submit" name="actionType" value="story" class="btn btn-info">
+            📖 Write a Story
+        </button>
+        <button type="submit" name="actionType" value="poem" class="btn btn-success">
+            ✨ Create a Poem
+        </button>
+    </div>
+</form>
+
+@if (ViewBag.Result != null)
+{
+    <div class="card mt-4 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">AI Response</h5>
+            <p class="card-text">@ViewBag.Result</p>
+        </div>
+    </div>
+}
